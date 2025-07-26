@@ -1,0 +1,40 @@
+EtherRift: The Hybrid Model Development Plan
+Executive Summary
+This updated blueprint refines the EtherRift project to incorporate a sophisticated Hybrid Interaction Model. This model represents a significant pedagogical advancement, creating a tailored learning journey that guides users from foundational concepts to real-world application.
+For the Stable Dimension, we will employ a "Simulation-First Model." This provides a frictionless, gas-free environment where beginners can learn core DeFi principles through frontend-driven interactions, with only their final achievements being recorded on-chain. This approach removes the initial barriers of gas fees and transaction latency, allowing for rapid and frustration-free learning.
+For the Volatile and Arbitrage Dimensions, we will transition to a "Live Interaction Model." Here, every significant action—lending, borrowing, swapping—will be a genuine on-chain transaction. This immerses intermediate and advanced users in the authentic DeFi experience, teaching them firsthand about gas costs, transaction confirmation times, and the immutable nature of the blockchain.
+This progressive approach ensures that EtherRift is not just a game, but a comprehensive educational platform that prepares users for the realities of decentralized finance. The following 15-day plan is structured for a two-person team to build this enhanced vision.
+The Hybrid Architecture: Smart Contract and Frontend Evolution
+Smart Contract Enhancements (Backend/Solidity Specialist)
+The shift to a hybrid model requires a more sophisticated EtherRiftManager.sol contract. It will now be divided into two logical sections:
+ * Simulation Logic (For all Dimensions):
+   * The recordTrade() function remains. It will be used by the Stable Dimension to log the results of a simulated lesson and by the advanced dimensions to log the profit-and-loss outcome of a live, multi-step on-chain action.
+ * Live Protocol Logic (For Volatile & Arbitrage Dimensions):
+   * The contract will now act as a self-contained, multi-functional DeFi protocol for educational purposes. It will manage internal balances of simulated assets (e.g., vETH, vUSDC) for each user.
+   * New State Variables:
+     * mapping(address => mapping(address => uint256)) public userAssetBalances; // Tracks user's internal balances of various simulated tokens.
+     * mapping(address => mapping(address => uint256)) public userCollateral; // Tracks user's deposited collateral.
+     * mapping(address => mapping(address => uint256)) public userDebt; // Tracks user's outstanding debt.
+   * New Core Functions:
+     * deposit(address _token, uint256 _amount): Allows users to deposit simulated assets into the contract.
+     * withdraw(address _token, uint256 _amount): Allows users to withdraw their assets.
+     * borrow(address _collateral, address _debtAsset, uint256 _borrowAmount): The core function for the lending module. It will check collateralization ratios before issuing a loan.
+     * repay(address _debtAsset, uint256 _repayAmount): Allows users to repay their loans.
+     * executeSwap(address _tokenIn, address _tokenOut, uint256 _amountIn): A simple AMM-style swap function for on-chain trades.
+     * executeFlashLoan(address _token, uint256 _amount): A function that will lend tokens and expect them to be returned within the same transaction, forming the basis of the flash loan lesson.
+Frontend Enhancements (Frontend Specialist)
+The frontend will be responsible for intelligently switching between the two interaction models.
+ * Conditional Logic: Components like TradingInterface.jsx will now need to know which dimension they are in. This can be managed through a prop or a shared state.
+   * If in Stable Dimension: Buttons will trigger functions that update a local Zustand store to simulate actions instantly. At the end of a successful lesson, it will make a single call to the recordTrade function via wagmi.
+   * If in Volatile/Arbitrage Dimension: Buttons will directly trigger wagmi's useContractWrite hook to call the corresponding live function on the smart contract (e.g., deposit, borrow). The UI will need to handle pending transaction states, showing loading spinners and success/error notifications. [1, 2]
+ * Data Display:
+   * In the Stable Dimension, portfolio balances will be read from the Zustand store.
+   * In the advanced dimensions, portfolio balances (collateral, debt, etc.) will be read directly from the smart contract using wagmi's useContractRead hook, ensuring the UI always reflects the true on-chain state.
+The Revised 15-Day Development Plan (Hybrid Model)
+This timeline is optimized for a two-person team, enabling parallel workflows to accommodate the increased complexity of the hybrid model.
+| Day(s) | Primary Focus | Developer 1 (Frontend Specialist) Tasks | Developer 2 (Backend/Solidity Specialist) Tasks |
+|---|---|---|---|
+| 1-3 | Foundation & Setup | Bootstrap React/Vite project (JavaScript). Set up project structure, install wagmi, ethers. Implement main layout and wallet connection. Build static UI for all portals and dimensions. | Initialize Hardhat project. Develop and test the AchievementToken.sol contract. Develop the basic EtherRiftManager.sol with the recordTrade function. Deploy both to the Etherlink testnet using the Thirdweb CLI. [3, 4, 5] |
+| 4-8 | Simulation & Core Logic | Implement the full interactive learning journeys for all Stable Dimension topics using the Simulation-First Model (Zustand for state, single on-chain call at the end). Connect UI to the WebSocket feed for market data. | Build the Node.js/WebSocket backend and program all the market data scenarios. Set up and deploy the Goldsky Subgraph to index the TradeRecorded and AchievementUnlocked events. [6, 7] |
+| 9-13 | Live On-Chain Integration | Implement the full interactive learning journeys for all Volatile & Arbitrage Dimension topics using the Live Interaction Model. Integrate wagmi's useContractWrite and useContractRead for all user actions. Build UI states for pending, successful, and failed transactions. | This is the core sprint. Expand EtherRiftManager.sol with all "Live Protocol Logic" functions (deposit, borrow, swap, flash loan, etc.) and internal ledgers. Write extensive Hardhat tests for all new on-chain functionality. Redeploy the updated contract. |
+| 14-15 | E2E Testing, Polish & Deployment | Collaborative Phase. Both developers conduct thorough end-to-end testing of every learning module across both interaction models on the testnet. Focus on UI/UX polishing, fixing visual bugs, and ensuring the application is responsive and intuitive. | Collaborative Phase. Both developers work on identifying and fixing bugs across the entire stack. Prepare the backend and smart contracts for final deployment. Deploy the frontend to Vercel and the backend to a service like Render. |
