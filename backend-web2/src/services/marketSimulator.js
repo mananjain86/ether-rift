@@ -523,4 +523,8 @@ class MarketSimulator {
   }
 }
 
+// Import the refactored MarketSimulator class
+const MarketSimulator = require('./marketSimulator/MarketSimulator');
+
+// Export the MarketSimulator class
 export default MarketSimulator;
