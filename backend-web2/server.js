@@ -3,7 +3,8 @@ import http from 'http';
 import {WebSocketServer} from 'ws';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
-import MarketSimulator from './src/services/marketSimulator.js';
+import MarketSimulator from './src/services/marketSimulator/MarketSimulator.js';
+import router from './src/routes/router.js';
 import 'dotenv/config';
 
 // Create Express app
@@ -19,6 +20,9 @@ const wss = new WebSocketServer({ server });
 
 // Initialize market simulator
 const marketSimulator = new MarketSimulator(wss);
+
+// Use API routes
+app.use('/api', router);
 
 // Handle WebSocket connections
 wss.on('connection', (ws) => {
@@ -67,11 +71,6 @@ wss.on('connection', (ws) => {
     type: 'connection_established',
     clientId
   }));
-});
-
-// API routes
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Start the server

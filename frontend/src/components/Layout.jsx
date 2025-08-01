@@ -13,7 +13,7 @@ const Layout = ({ children }) => (
       <div className="absolute top-1/2 right-1/3 w-40 h-40 bg-green-400 opacity-10 rounded-full blur-2xl animate-float-mid" />
     </div>
     <Navbar />
-    <main className="pt-24 px-4 md:px-8 mx-auto max-w-4xl w-full text-center backdrop-blur-xl bg-gradient-to-br from-cyan-900/60 via-black/60 to-pink-900/60 border-2 border-cyan-400/30 rounded-3xl shadow-2xl min-h-[80vh] flex flex-col items-center justify-center">
+    <main className="pt-24 w-full">
       {children}
     </main>
   </div>

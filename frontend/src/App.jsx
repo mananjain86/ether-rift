@@ -23,7 +23,7 @@ function App() {
         <Route path="/tutorial" element={<TutorialCenter />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+      </Routes> 
     </Layout>
   );
 }
