@@ -159,50 +159,90 @@ contract VolatileDimension {
     // They are defined here for clarity but would not be part of the actual implementation
     
     function _getTokenValue(address _token, uint256 _amount) internal view returns (uint256) {
-        // This would access tokenPrices from EtherRiftManager
-        return _amount.mul(_getTokenPrice(_token)).div(10**18);
+        // Delegate call to EtherRiftCore for token value
+        (bool success, bytes memory data) = address(this).staticcall(
+            abi.encodeWithSignature("getTokenValue(address,uint256)", _token, _amount)
+        );
+        require(success, "Failed to get token value");
+        return abi.decode(data, (uint256));
     }
     
     function _getTokenPrice(address _token) internal view returns (uint256) {
-        // This would access tokenPrices from EtherRiftManager
-        return 0; // Placeholder
+        // Delegate call to EtherRiftCore for token price
+        (bool success, bytes memory data) = address(this).staticcall(
+            abi.encodeWithSignature("getTokenPrice(address)", _token)
+        );
+        require(success, "Failed to get token price");
+        return abi.decode(data, (uint256));
     }
     
     function _getUserBalance(address _user, address _token) internal view returns (uint256) {
-        // This would access userAssetBalances from EtherRiftManager
-        return 0; // Placeholder
+        // Delegate call to EtherRiftCore for user balance
+        (bool success, bytes memory data) = address(this).staticcall(
+            abi.encodeWithSignature("getUserBalance(address,address)", _user, _token)
+        );
+        require(success, "Failed to get user balance");
+        return abi.decode(data, (uint256));
     }
     
     function _getUserCollateral(address _user, address _token) internal view returns (uint256) {
-        // This would access userCollateral from EtherRiftManager
-        return 0; // Placeholder
+        // Delegate call to EtherRiftCore for user collateral
+        (bool success, bytes memory data) = address(this).staticcall(
+            abi.encodeWithSignature("getUserCollateral(address,address)", _user, _token)
+        );
+        require(success, "Failed to get user collateral");
+        return abi.decode(data, (uint256));
     }
     
     function _getUserDebt(address _user, address _token) internal view returns (uint256) {
-        // This would access userDebt from EtherRiftManager
-        return 0; // Placeholder
+        // Delegate call to EtherRiftCore for user debt
+        (bool success, bytes memory data) = address(this).staticcall(
+            abi.encodeWithSignature("getUserDebt(address,address)", _user, _token)
+        );
+        require(success, "Failed to get user debt");
+        return abi.decode(data, (uint256));
     }
     
     function _getTotalCollateralValue(address _user) internal view returns (uint256) {
-        // This would calculate total collateral value across all assets
-        return 0; // Placeholder
+        // Delegate call to EtherRiftCore for total collateral value
+        (bool success, bytes memory data) = address(this).staticcall(
+            abi.encodeWithSignature("getTotalCollateralValue(address)", _user)
+        );
+        require(success, "Failed to get total collateral value");
+        return abi.decode(data, (uint256));
     }
     
     function _getTotalDebtValue(address _user) internal view returns (uint256) {
-        // This would calculate total debt value across all assets
-        return 0; // Placeholder
+        // Delegate call to EtherRiftCore for total debt value
+        (bool success, bytes memory data) = address(this).staticcall(
+            abi.encodeWithSignature("getTotalDebtValue(address)", _user)
+        );
+        require(success, "Failed to get total debt value");
+        return abi.decode(data, (uint256));
     }
     
     function _updateBalance(address _user, address _token, uint256 _amount, bool _increase) internal {
-        // This would update userAssetBalances in EtherRiftManager
+        // Delegate call to EtherRiftCore to update balance
+        (bool success, ) = address(this).call(
+            abi.encodeWithSignature("updateUserBalance(address,address,uint256,bool)", _user, _token, _amount, _increase)
+        );
+        require(success, "Failed to update balance");
     }
     
     function _updateCollateral(address _user, address _token, uint256 _amount, bool _increase) internal {
-        // This would update userCollateral in EtherRiftManager
+        // Delegate call to EtherRiftCore to update collateral
+        (bool success, ) = address(this).call(
+            abi.encodeWithSignature("updateUserCollateral(address,address,uint256,bool)", _user, _token, _amount, _increase)
+        );
+        require(success, "Failed to update collateral");
     }
     
     function _updateDebt(address _user, address _token, uint256 _amount, bool _increase) internal {
-        // This would update userDebt in EtherRiftManager
+        // Delegate call to EtherRiftCore to update debt
+        (bool success, ) = address(this).call(
+            abi.encodeWithSignature("updateUserDebt(address,address,uint256,bool)", _user, _token, _amount, _increase)
+        );
+        require(success, "Failed to update debt");
     }
     
     function _isCollateralSufficient(address _user, address _token, uint256 _withdrawAmount) internal view returns (bool) {

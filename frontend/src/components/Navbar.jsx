@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useEtherRift } from '../context/EtherRiftContext';
 
 const navLinks = [
   { name: 'HOME', path: '/' },
@@ -13,12 +12,46 @@ const navLinks = [
 
 const Navbar = () => {
   const location = useLocation();
-  const { wallet, connectWallet, disconnectWallet } = useEtherRift();
+  const [ walletAddress, setWalletAddress ] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [ensName, setEnsName] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
 
-  const handleConnect = () => {
-    console.log("hello")
-  };
+    useEffect(() => {
+      const saved = localStorage.getItem('walletAddress');
+      if (saved) {setWalletAddress(saved);
+                    setIsConnected(true);
+      };
+      // Listen for account changes
+      if (window.ethereum) {
+        window.ethereum.on('accountsChanged', (accounts) => {
+          if (accounts.length > 0) {
+            setWalletAddress(accounts[0]);
+            setIsConnected(true);
+            localStorage.setItem('walletAddress', accounts[0]);
+          } else {
+            setWalletAddress("");
+            localStorage.removeItem('walletAddress');
+          }
+        });
+      }
+    }, []);
+
+    // Connect wallet function
+    const connectWallet = async () => {
+      if (window.ethereum) {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          setWalletAddress(accounts[0]);
+          setIsConnected(true);
+          localStorage.setItem('walletAddress', accounts[0]);
+        } catch (err) {
+          alert('Wallet connection failed!');
+        }
+      } else {
+        alert('Please install MetaMask!');
+      }
+    };
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -41,14 +74,14 @@ const Navbar = () => {
             {link.name}
           </Link>
         ))}
-        {wallet ? (
-          <div className="ml-8 px-5 py-2 bg-[#181c24] text-cyan-200 font-orbitron uppercase border border-cyan-400 flex items-center gap-2 cursor-pointer text-sm" onClick={disconnectWallet} title="Disconnect Wallet">
-            <span className="text-lg">🔗</span> {wallet}
+        {isConnected ? (
+          <div className="ml-8 px-5 py-2 bg-[#181c24] text-cyan-200 font-orbitron uppercase border border-cyan-400 flex items-center gap-2 cursor-pointer text-sm" onClick={() => { setWallet(null); setIsConnected(false); setEnsName(null); }} title="Disconnect Wallet">
+            <span className="text-lg">🔗</span> {walletAddress}
           </div>
         ) : (
           <button
             className="ml-8 px-5 py-2 bg-[#181c24] text-cyan-200 font-orbitron uppercase border border-cyan-400 hover:text-green-400 hover:border-green-400 text-sm"
-            onClick={handleConnect}
+            onClick={connectWallet}
           >
             CONNECT WALLET
           </button>
@@ -57,14 +90,14 @@ const Navbar = () => {
 
       {/* Mobile Navigation */}
       <div className="lg:hidden flex items-center gap-4">
-        {wallet ? (
-          <div className="px-3 py-2 bg-[#181c24] text-cyan-200 font-orbitron uppercase border border-cyan-400 flex items-center gap-2 cursor-pointer text-xs" onClick={disconnectWallet} title="Disconnect Wallet">
+        {isConnected ? (
+          <div className="px-3 py-2 bg-[#181c24] text-cyan-200 font-orbitron uppercase border border-cyan-400 flex items-center gap-2 cursor-pointer text-xs" onClick={() => { setWallet(null); setIsConnected(false); setEnsName(null); }} title="Disconnect Wallet">
             <span className="text-lg">🔗</span>
           </div>
         ) : (
           <button
             className="px-3 py-2 bg-[#181c24] text-cyan-200 font-orbitron uppercase border border-cyan-400 hover:text-green-400 hover:border-green-400 text-xs"
-            onClick={handleConnect}
+            onClick={connectWallet}
           >
             CONNECT
           </button>
@@ -104,4 +137,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar; 
+export default Navbar;
