@@ -139,7 +139,7 @@ contract TradingFunctions {
     }
     
     /**
-     * @notice Borrow tokens against collateral
+     * @notice Borrow tokens against collateral (including achievement tokens)
      * @param _token The token to borrow
      * @param _amount The amount to borrow
      * @param _collateralToken The collateral token
@@ -150,23 +150,48 @@ contract TradingFunctions {
         uint256 _amount, 
         address _collateralToken, 
         uint256 _collateralAmount
-    ) external validToken(_token) validToken(_collateralToken) {
+    ) external validToken(_token) {
         require(_amount > 0, "Amount must be greater than 0");
         require(_collateralAmount > 0, "Collateral amount must be greater than 0");
         
+        // Check if collateral is achievement token or regular token
+        bool isAchievementToken = _collateralToken == address(coreContract.achievementToken());
+        
+        // If it's a regular token, validate it
+        if (!isAchievementToken) {
+            require(coreContract.isTokenSupported(_collateralToken), "Token not supported");
+        }
+        
         // Check if user has enough collateral
-        require(coreContract.getUserBalance(msg.sender, _collateralToken) >= _collateralAmount, "Insufficient collateral");
+        require(isAchievementToken ? 
+            coreContract.achievementToken().balanceOf(msg.sender) >= _collateralAmount :
+            coreContract.getUserBalance(msg.sender, _collateralToken) >= _collateralAmount, 
+            "Insufficient collateral");
         
         // Calculate collateral value
-        uint256 collateralValue = coreContract.getTokenValue(_collateralToken, _collateralAmount);
+        uint256 collateralValue;
+        if (isAchievementToken) {
+            // Achievement tokens have a fixed value of 1 USD each for collateral purposes
+            collateralValue = _collateralAmount;
+        } else {
+            collateralValue = coreContract.getTokenValue(_collateralToken, _collateralAmount);
+        }
+        
         uint256 borrowValue = coreContract.getTokenValue(_token, _amount);
         
         // Check collateralization ratio (150%)
         require(collateralValue >= (borrowValue * 150) / 100, "Insufficient collateralization");
         
         // Update balances
-        coreContract.updateUserBalance(msg.sender, _collateralToken, _collateralAmount, false); // Decrease collateral
-        coreContract.updateUserCollateral(msg.sender, _collateralToken, _collateralAmount, true); // Increase collateral tracking
+        if (isAchievementToken) {
+            // Transfer achievement tokens to contract as collateral
+            coreContract.achievementToken().transferFrom(msg.sender, address(this), _collateralAmount);
+            coreContract.updateUserCollateral(msg.sender, _collateralToken, _collateralAmount, true); // Track collateral
+        } else {
+            coreContract.updateUserBalance(msg.sender, _collateralToken, _collateralAmount, false); // Decrease collateral
+            coreContract.updateUserCollateral(msg.sender, _collateralToken, _collateralAmount, true); // Increase collateral tracking
+        }
+        
         coreContract.updateUserBalance(msg.sender, _token, _amount, true); // Increase borrowed tokens
         coreContract.updateUserDebt(msg.sender, _token, _amount, true); // Increase debt tracking
         
@@ -275,4 +300,4 @@ contract TradingFunctions {
         // Subtract 0.3% fee
         return (tokenValue * 997) / 1000;
     }
-} 
+}

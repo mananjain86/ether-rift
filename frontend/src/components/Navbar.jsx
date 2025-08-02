@@ -5,53 +5,63 @@ const navLinks = [
   { name: 'HOME', path: '/' },
   { name: 'DIMENSIONS', path: '/dimensions' },
   { name: 'PROFILE', path: '/profile' },
+  { name: 'DUEL', path: '/duel' },
   { name: 'LEADERBOARD', path: '/leaderboard' },
   { name: 'TUTORIAL', path: '/tutorial' },
-  { name: 'SETTINGS', path: '/settings' },
 ];
 
 const Navbar = () => {
   const location = useLocation();
-  const [ walletAddress, setWalletAddress ] = useState("");
+  const [wallet, setWallet] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [ensName, setEnsName] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
 
-    useEffect(() => {
-      const saved = localStorage.getItem('walletAddress');
-      if (saved) {setWalletAddress(saved);
-                    setIsConnected(true);
-      };
-      // Listen for account changes
-      if (window.ethereum) {
-        window.ethereum.on('accountsChanged', (accounts) => {
-          if (accounts.length > 0) {
-            setWalletAddress(accounts[0]);
-            setIsConnected(true);
-            localStorage.setItem('walletAddress', accounts[0]);
-          } else {
-            setWalletAddress("");
-            localStorage.removeItem('walletAddress');
-          }
-        });
-      }
-    }, []);
-
-    // Connect wallet function
-    const connectWallet = async () => {
-      if (window.ethereum) {
-        try {
-          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-          setWalletAddress(accounts[0]);
+  useEffect(() => {
+    const saved = localStorage.getItem('walletAddress');
+    if (saved) {
+      setWallet(saved);
+      setIsConnected(true);
+    }
+    
+    // Listen for account changes
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', (accounts) => {
+        if (accounts.length > 0) {
+          setWallet(accounts[0]);
           setIsConnected(true);
           localStorage.setItem('walletAddress', accounts[0]);
-        } catch (err) {
-          alert('Wallet connection failed!');
+        } else {
+          setWallet("");
+          localStorage.removeItem('walletAddress');
+          setIsConnected(false);
         }
-      } else {
-        alert('Please install MetaMask!');
+      });
+    }
+  }, []);
+
+  // Connect wallet function
+  const connectWallet = async () => {
+    if (window.ethereum) {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        setWallet(accounts[0]);
+        setIsConnected(true);
+        localStorage.setItem('walletAddress', accounts[0]);
+      } catch (err) {
+        alert('Wallet connection failed!');
       }
-    };
+    } else {
+      alert('Please install MetaMask!');
+    }
+  };
+
+  const disconnectWallet = () => {
+    setWallet("");
+    setIsConnected(false);
+    setEnsName(null);
+    localStorage.removeItem('walletAddress');
+  };
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -60,7 +70,7 @@ const Navbar = () => {
   return (
     <nav className="w-full flex items-center justify-between px-6 lg:px-12 py-4 bg-[#10131a] border-b border-cyan-500/20 fixed top-0 left-0 z-50">
       <div className="flex items-center gap-3">
-        <span className="text-cyan-200 font-extrabold text-xl lg:text-2xl tracking-widest font-orbitron uppercase">ETHERRIFT</span>
+        <span className="text-cyan-200 font-extrabold text-xl lg:text-2xl tracking-widest font-orbitron uppercase">EtherRift</span>
       </div>
       
       {/* Desktop Navigation */}
@@ -75,8 +85,8 @@ const Navbar = () => {
           </Link>
         ))}
         {isConnected ? (
-          <div className="ml-8 px-5 py-2 bg-[#181c24] text-cyan-200 font-orbitron uppercase border border-cyan-400 flex items-center gap-2 cursor-pointer text-sm" onClick={() => { setWallet(null); setIsConnected(false); setEnsName(null); }} title="Disconnect Wallet">
-            <span className="text-lg">🔗</span> {walletAddress}
+          <div className="ml-8 px-5 py-2 bg-[#181c24] text-cyan-200 font-orbitron uppercase border border-cyan-400 flex items-center gap-2 cursor-pointer text-sm" onClick={disconnectWallet} title="Disconnect Wallet">
+            <span className="text-lg">🔗</span> {wallet.substring(0, 6)}...{wallet.substring(wallet.length - 4)}
           </div>
         ) : (
           <button
@@ -91,7 +101,7 @@ const Navbar = () => {
       {/* Mobile Navigation */}
       <div className="lg:hidden flex items-center gap-4">
         {isConnected ? (
-          <div className="px-3 py-2 bg-[#181c24] text-cyan-200 font-orbitron uppercase border border-cyan-400 flex items-center gap-2 cursor-pointer text-xs" onClick={() => { setWallet(null); setIsConnected(false); setEnsName(null); }} title="Disconnect Wallet">
+          <div className="px-3 py-2 bg-[#181c24] text-cyan-200 font-orbitron uppercase border border-cyan-400 flex items-center gap-2 cursor-pointer text-xs" onClick={disconnectWallet} title="Disconnect Wallet">
             <span className="text-lg">🔗</span>
           </div>
         ) : (
@@ -102,18 +112,13 @@ const Navbar = () => {
             CONNECT
           </button>
         )}
-        
-        {/* Hamburger Menu Button */}
         <button
+          className="text-cyan-300 hover:text-cyan-100"
           onClick={toggleMobileMenu}
-          className="text-cyan-300 hover:text-cyan-400 transition-colors p-2"
-          aria-label="Toggle mobile menu"
         >
-          <div className="w-6 h-6 flex flex-col justify-center items-center">
-            <span className={`block w-5 h-0.5 bg-current transition-all duration-300 ${mobileMenuOpen ? 'rotate-45 translate-y-1' : '-translate-y-1'}`}></span>
-            <span className={`block w-5 h-0.5 bg-current transition-all duration-300 ${mobileMenuOpen ? 'opacity-0' : 'opacity-100'}`}></span>
-            <span className={`block w-5 h-0.5 bg-current transition-all duration-300 ${mobileMenuOpen ? '-rotate-45 -translate-y-1' : 'translate-y-1'}`}></span>
-          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
+          </svg>
         </button>
       </div>
 

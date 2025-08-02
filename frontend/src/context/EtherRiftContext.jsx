@@ -1,6 +1,11 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { ethers } from 'ethers';
+import { getAllContracts, getCoreContract, getTradingContract, getAchievementContract } from '../contracts/contract.js';
 
 const EtherRiftContext = createContext();
+
+// Backend API URL
+const API_URL = "http://localhost:3001/api";
 
 const mockUser = {
   address: '',
@@ -100,6 +105,12 @@ export const EtherRiftProvider = ({ children }) => {
   const [leaderboard, setLeaderboard] = useState(mockLeaderboard);
   const [guilds, setGuilds] = useState(mockGuilds);
   const [dimensions] = useState(mockDimensions);
+  const [contracts, setContracts] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [duels, setDuels] = useState([]);
+  const [activeDuel, setActiveDuel] = useState(null);
+  const [waitingForDuel, setWaitingForDuel] = useState(false);
   
   // Tutorial state
   const [tutorialOpen, setTutorialOpen] = useState(false);
@@ -187,6 +198,277 @@ export const EtherRiftProvider = ({ children }) => {
     }));
   };
 
+  // Initialize contracts when wallet is connected
+  useEffect(() => {
+    const initContracts = async () => {
+      if (!wallet) return;
+      
+      try {
+        setLoading(true);
+        
+        // Use the contract.js functions to get all contracts
+        const allContracts = await getAllContracts();
+        setContracts(allContracts);
+        
+        // Fetch user data from MongoDB
+        await fetchUserData(wallet);
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to initialize contracts:", err);
+        setError("Failed to connect to blockchain");
+        setLoading(false);
+      }
+    };
+    
+    initContracts();
+  }, [wallet]);
+  
+  // Fetch user data from MongoDB
+  const fetchUserData = async (address) => {
+    try {
+      const response = await fetch(`${API_URL}/users/${address}`);
+      
+      if (response.status === 404) {
+        // User not found, register new user
+        await registerUser(address);
+        return;
+      }
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch user data");
+      }
+      
+      const userData = await response.json();
+      setUser(prev => ({
+        ...prev,
+        tokenBalance: userData.tokenBalance,
+        loans: userData.loans,
+        achievements: userData.achievements
+      }));
+    } catch (err) {
+      console.error("Error fetching user data:", err);
+      setError("Failed to fetch user data");
+    }
+  };
+  
+  // Register new user
+  const registerUser = async (address) => {
+    try {
+      const response = await fetch(`${API_URL}/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ walletAddress: address })
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to register user");
+      }
+      
+      const userData = await response.json();
+      setUser(prev => ({
+        ...prev,
+        tokenBalance: userData.tokenBalance,
+        loans: userData.loans,
+        achievements: userData.achievements
+      }));
+    } catch (err) {
+      console.error("Error registering user:", err);
+      setError("Failed to register user");
+    }
+  };
+  
+  // Take a loan
+  const takeLoan = async (amount) => {
+    if (!contracts || !wallet) return;
+    
+    try {
+      setLoading(true);
+      
+      // Call smart contract to take loan with achievement tokens as collateral
+      const collateralAmount = amount * 1.5; // 150% collateralization
+      
+      // Approve achievement tokens to be used as collateral
+      const approveTx = await contracts.achievementToken.approve(
+        contracts.tradingFunctions.address,
+        ethers.parseEther(collateralAmount.toString())
+      );
+      await approveTx.wait();
+      
+      // Borrow tokens
+      const borrowTx = await contracts.tradingFunctions.borrow(
+        "0x0000000000000000000000000000000000000002", // USDC address
+        ethers.parseEther(amount.toString()),
+        contracts.achievementToken.address,
+        ethers.parseEther(collateralAmount.toString())
+      );
+      await borrowTx.wait();
+      
+      // Record loan in MongoDB
+      const response = await fetch(`${API_URL}/users/${wallet}/loans`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tokenBorrowed: "USDC",
+          amount,
+          collateralToken: "Achievement Token",
+          collateralAmount
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to record loan");
+      }
+      
+      const userData = await response.json();
+      setUser(prev => ({
+        ...prev,
+        tokenBalance: userData.tokenBalance,
+        loans: userData.loans
+      }));
+      
+      setLoading(false);
+    } catch (err) {
+      console.error("Error taking loan:", err);
+      setError("Failed to take loan");
+      setLoading(false);
+    }
+  };
+  
+  // Start a duel
+  const startDuel = async () => {
+    if (!wallet) return;
+    
+    try {
+      setWaitingForDuel(true);
+      
+      // Connect to WebSocket for real-time duel matching
+      const ws = new WebSocket(`ws://localhost:3001`);
+      
+      ws.onopen = () => {
+        // Send request to find a duel
+        ws.send(JSON.stringify({
+          type: 'find_duel',
+          walletAddress: wallet
+        }));
+      };
+      
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'duel_found') {
+          setActiveDuel(data.duel);
+          setWaitingForDuel(false);
+        }
+      };
+      
+      ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        setError("Failed to connect to duel server");
+        setWaitingForDuel(false);
+      };
+      
+      return () => {
+        ws.close();
+      };
+    } catch (err) {
+      console.error("Error starting duel:", err);
+      setError("Failed to start duel");
+      setWaitingForDuel(false);
+    }
+  };
+  
+  // Answer duel question
+  const answerDuelQuestion = async (questionId, answerId) => {
+    if (!activeDuel || !wallet) return;
+    
+    try {
+      const response = await fetch(`${API_URL}/duel/${activeDuel.id}/answer`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          walletAddress: wallet,
+          questionId,
+          answerId
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to submit answer");
+      }
+      
+      const result = await response.json();
+      
+      // Update active duel with new state
+      setActiveDuel(result.duel);
+      
+      // If duel is complete, update user data
+      if (result.duel.status === 'completed') {
+        await fetchUserData(wallet);
+        await fetchLeaderboard();
+      }
+    } catch (err) {
+      console.error("Error answering question:", err);
+      setError("Failed to submit answer");
+    }
+  };
+  
+  // Fetch leaderboard
+  const fetchLeaderboard = async () => {
+    try {
+      const response = await fetch(`${API_URL}/leaderboard`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch leaderboard");
+      }
+      
+      const leaderboardData = await response.json();
+      setLeaderboard(leaderboardData);
+    } catch (err) {
+      console.error("Error fetching leaderboard:", err);
+      setError("Failed to fetch leaderboard");
+    }
+  };
+  
+  // Add this function to the EtherRiftProvider component
+  
+  // Update user tokens
+  const updateUserTokens = async (amount) => {
+    if (!wallet) return;
+    
+    try {
+      // Update user tokens in the backend
+      const response = await fetch(`http://localhost:3001/api/users/${wallet}/balance`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ amount })
+      });
+      
+      if (!response.ok) throw new Error('Failed to update token balance');
+      
+      // Update local state
+      const userData = await response.json();
+      setUser(prev => ({
+        ...prev,
+        tokenBalance: userData.tokenBalance
+      }));
+      
+      return userData.tokenBalance;
+    } catch (error) {
+      console.error('Error updating token balance:', error);
+      return null;
+    }
+  };
+  
+  // Then add it to the context provider value
   return (
     <EtherRiftContext.Provider value={{
       user, setUser,
@@ -195,10 +477,28 @@ export const EtherRiftProvider = ({ children }) => {
       leaderboard, guilds, dimensions,
       completeTutorial, updateSettings,
       // Tutorial related
-      tutorialOpen, setTutorialOpen, tutorialData, handleTutorialNext
+      tutorialOpen, setTutorialOpen, tutorialData, handleTutorialNext,
+      // User tokens
+      updateUserTokens,
+      // Wallet
+      wallet,
+      // Contracts
+      contracts,
+      // Loading and error states
+      loading,
+      error,
+      // Duel related
+      duels,
+      activeDuel,
+      waitingForDuel,
+      startDuel,
+      answerDuelQuestion,
+      // Loan function
+      takeLoan
     }}>
       {children}
     </EtherRiftContext.Provider>
   );
 };
+
 export const useEtherRift = () => useContext(EtherRiftContext);

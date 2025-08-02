@@ -4,8 +4,13 @@ import {WebSocketServer} from 'ws';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import MarketSimulator from './src/services/marketSimulator/MarketSimulator.js';
+import DuelService from './src/services/duelService/DuelService.js';
 import router from './src/routes/router.js';
+import connectDB from './src/config/database.js';
 import 'dotenv/config';
+
+// Connect to MongoDB
+connectDB();
 
 // Create Express app
 const app = express();
@@ -18,8 +23,9 @@ const server = http.createServer(app);
 // Create WebSocket server
 const wss = new WebSocketServer({ server });
 
-// Initialize market simulator
+// Initialize services
 const marketSimulator = new MarketSimulator(wss);
+const duelService = new DuelService(wss);
 
 // Use API routes
 app.use('/api', router);
@@ -40,16 +46,18 @@ wss.on('connection', (ws) => {
       
       // Handle different message types
       switch (data.type) {
-        case 'start_scenario':
-          marketSimulator.startScenario(clientId, data.topicId, data.params);
+          
+        // Duel-related message types
+        case 'join_duel_queue':
+          duelService.addToQueue(clientId, data.walletAddress, data.wageredAmount);
           break;
           
-        case 'stop_scenario':
-          marketSimulator.stopScenario(clientId);
+        case 'cancel_duel_queue':
+          duelService.cancelMatchmaking(clientId);
           break;
           
-        case 'trigger_event':
-          marketSimulator.triggerEvent(clientId, data.eventType, data.eventParams);
+        case 'submit_duel_answer':
+          duelService.handleAnswer(clientId, data.matchId, data.answerId, data.answerText);
           break;
           
         default:
@@ -63,7 +71,7 @@ wss.on('connection', (ws) => {
   // Handle client disconnection
   ws.on('close', () => {
     console.log(`Client disconnected: ${clientId}`);
-    marketSimulator.stopScenario(clientId);
+    duelService.handleDisconnect(clientId);
   });
   
   // Send welcome message

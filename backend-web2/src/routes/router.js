@@ -1,6 +1,9 @@
 import express from 'express';
 import { topicData } from '../data/topicData.js';
 import scenarioManager from '../services/marketSimulator/ScenarioManager.js';
+// Add this line to the imports
+import { getUserByWallet, registerUser, updateTokenBalance, recordLoan, getOnlineUsers } from '../controllers/userController.js';
+import { recordPvPMatch, getUserPvPHistory } from '../controllers/pvpController.js';
 
 const router = express.Router();
 
@@ -8,6 +11,16 @@ const router = express.Router();
 router.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// User routes
+router.get('/users/:walletAddress', getUserByWallet);
+router.post('/users', registerUser);
+router.put('/users/:walletAddress/balance', updateTokenBalance);
+router.post('/users/:walletAddress/loans', recordLoan);
+
+// PvP routes
+router.post('/pvp', recordPvPMatch);
+router.get('/pvp/users/:walletAddress', getUserPvPHistory);
 
 // Get topic data by dimension and topic ID
 router.get('/topics/:dimension/:topicId', (req, res) => {
@@ -61,3 +74,6 @@ Object.entries(topicData).forEach(([dimension, topics]) => {
 });
 
 export default router;
+
+// Add this route
+router.get('/users/online', getOnlineUsers);
