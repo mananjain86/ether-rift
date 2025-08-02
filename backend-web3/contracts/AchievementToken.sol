@@ -54,15 +54,4 @@ contract AchievementToken is ERC20Burnable, ERC20Permit, AccessControl, Pausable
     function unpause() external onlyRole(PAUSER_ROLE) {
         _unpause();
     }
-
-    /**
-     * @dev Hook that is called before any transfer of tokens
-     */
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal override whenNotPaused {
-        super._beforeTokenTransfer(from, to, amount);
-    }
 }
