@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useEtherRift } from '../context/EtherRiftContext';
+import { useAppSelector } from '../store/hooks';
 import { useNavigate } from 'react-router-dom';
 
 const Leaderboard = () => {
-  const { leaderboard, guilds, wallet } = useEtherRift();
+  const { wallet } = useAppSelector(state => state.user);
   const navigate = useNavigate();
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [recentMatches, setRecentMatches] = useState([]);
@@ -58,6 +58,21 @@ const Leaderboard = () => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+  
+  // Add this useEffect
+  useEffect(() => {
+    const handleWalletConnected = (event) => {
+      const { address } = event.detail;
+      // Refresh data when wallet is connected
+      fetchData(address);
+    };
+    
+    window.addEventListener('walletConnected', handleWalletConnected);
+    
+    return () => {
+      window.removeEventListener('walletConnected', handleWalletConnected);
+    };
+  }, []);
   
   return (
     <div className="relative flex flex-col md:flex-row gap-8 w-full z-10 mt-4 min-h-[80vh] bg-gradient-to-br from-black via-cyan-950 to-pink-950 font-mono px-2 pb-8 overflow-x-hidden">

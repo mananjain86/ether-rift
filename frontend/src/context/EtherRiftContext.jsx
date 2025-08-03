@@ -6,39 +6,7 @@ const EtherRiftContext = createContext();
 
 // Backend API URL
 const API_URL = "http://localhost:3001/api";
-
-const mockUser = {
-  address: '',
-  stats: {
-    level: 7,
-    xp: 1420,
-    winLoss: [12, 5],
-    totalVolume: 23.5,
-    dimensionsExplored: 3,
-    assets: 2.35,
-  },
-  inventory: ['Liquidity Pool Token x2', 'Arbitrage Bot x1', 'Spell: Flash Loan'],
-  badges: [
-    { name: 'First Arbitrage', icon: '💡' },
-    { name: 'Liquidity Provider', icon: '💧' },
-    { name: 'Guild Champion', icon: '🏆' },
-  ],
-  history: [
-    { time: '10:21', action: 'Bought 0.5 ETH in Volatile Dimension' },
-    { time: '10:18', action: 'Provided liquidity to Stable Pool' },
-    { time: '10:15', action: 'Won a trading duel' },
-  ],
-  tutorial: [true, true, false, false],
-  settings: {
-    darkMode: true,
-    advancedTools: false,
-    notifications: true,
-    twoFA: false,
-    spendingLimit: false,
-    showPrivateKey: false,
-  },
-};
-
+ 
 const mockDimensions = [
   {
     name: 'Stable Dimension',
@@ -99,7 +67,14 @@ const mockGuilds = [
 
 export const EtherRiftProvider = ({ children }) => {
   const [wallet, setWallet] = useState('');
-  const [user, setUser] = useState(mockUser);
+  const [user, setUser] = useState({
+    address: '',
+    tokenBalance: 0,
+    loans: [],
+    achievements: [],
+    topics: [],
+    history: []
+  });
   const [currentDimension, setCurrentDimension] = useState(null);
   const [orderBook, setOrderBook] = useState(mockOrderBook);
   const [leaderboard, setLeaderboard] = useState(mockLeaderboard);
@@ -125,7 +100,6 @@ export const EtherRiftProvider = ({ children }) => {
   // Simulate entering a dimension
   const enterDimension = (dim) => {
     setCurrentDimension(dim);
-    setUser(u => ({ ...u, stats: { ...u.stats, dimensionsExplored: u.stats.dimensionsExplored + 1 } }));
   }
 
   // Open tutorial popup
@@ -173,7 +147,6 @@ export const EtherRiftProvider = ({ children }) => {
     ]);
     setUser(u => ({
       ...u,
-      stats: { ...u.stats, totalVolume: u.stats.totalVolume + amount },
       history: [
         { time: new Date().toLocaleTimeString(), action: `${type} ${amount} ETH at ${price}` },
         ...u.history.slice(0, 9),
@@ -181,49 +154,6 @@ export const EtherRiftProvider = ({ children }) => {
     }));
   };
 
-  // Simulate tutorial progress
-  const completeTutorial = (idx) => {
-    setUser(u => {
-      const tutorial = [...u.tutorial];
-      tutorial[idx] = true;
-      return { ...u, tutorial };
-    });
-  };
-
-  // Simulate settings update
-  const updateSettings = (key, value) => {
-    setUser(u => ({
-      ...u,
-      settings: { ...u.settings, [key]: value },
-    }));
-  };
-
-  // Initialize contracts when wallet is connected
-  useEffect(() => {
-    const initContracts = async () => {
-      if (!wallet) return;
-      
-      try {
-        setLoading(true);
-        
-        // Use the contract.js functions to get all contracts
-        const allContracts = await getAllContracts();
-        setContracts(allContracts);
-        
-        // Fetch user data from MongoDB
-        await fetchUserData(wallet);
-        
-        setLoading(false);
-      } catch (err) {
-        console.error("Failed to initialize contracts:", err);
-        setError("Failed to connect to blockchain");
-        setLoading(false);
-      }
-    };
-    
-    initContracts();
-  }, [wallet]);
-  
   // Fetch user data from MongoDB
   const fetchUserData = async (address) => {
     try {
@@ -240,11 +170,44 @@ export const EtherRiftProvider = ({ children }) => {
       }
       
       const userData = await response.json();
+      
+      // Fetch PvP history
+      const pvpResponse = await fetch(`${API_URL}/pvp/users/${address}`);
+      let pvpHistory = [];
+      
+      if (pvpResponse.ok) {
+        pvpHistory = await pvpResponse.json();
+      }
+      
+      // Calculate win/loss from PvP history
+      const wins = pvpHistory.filter(record => {
+        if (record.player1.walletAddress.toLowerCase() === address.toLowerCase()) {
+          return record.winner === 'player1';
+        } else {
+          return record.winner === 'player2';
+        }
+      }).length;
+      
+      const losses = pvpHistory.filter(record => {
+        if (record.player1.walletAddress.toLowerCase() === address.toLowerCase()) {
+          return record.winner === 'player2';
+        } else {
+          return record.winner === 'player1';
+        }
+      }).length;
+      
+      // Update user state with MongoDB data
       setUser(prev => ({
         ...prev,
-        tokenBalance: userData.tokenBalance,
-        loans: userData.loans,
-        achievements: userData.achievements
+        address: address,
+        tokenBalance: userData.tokenBalance || 0,
+        loans: userData.loans || [],
+        achievements: userData.achievements || [],
+        topics: userData.topics || [],
+        history: pvpHistory.map(record => ({
+          time: new Date(record.timestamp).toLocaleTimeString(),
+          action: `${record.winner === 'player1' ? 'Won' : 'Lost'} a duel against ${record.player1.walletAddress.toLowerCase() === address.toLowerCase() ? record.player2.walletAddress.substring(0, 6) : record.player1.walletAddress.substring(0, 6)}`
+        })).slice(0, 10)
       }));
     } catch (err) {
       console.error("Error fetching user data:", err);
@@ -270,15 +233,43 @@ export const EtherRiftProvider = ({ children }) => {
       const userData = await response.json();
       setUser(prev => ({
         ...prev,
-        tokenBalance: userData.tokenBalance,
-        loans: userData.loans,
-        achievements: userData.achievements
+        address: address,
+        tokenBalance: userData.tokenBalance || 0,
+        loans: userData.loans || [],
+        achievements: userData.achievements || [],
+        topics: userData.topics || []
       }));
     } catch (err) {
       console.error("Error registering user:", err);
       setError("Failed to register user");
     }
   };
+  
+  // Initialize contracts when wallet is connected
+  useEffect(() => {
+    const initContracts = async () => {
+      if (!wallet) return;
+      
+      try {
+        setLoading(true);
+        
+        // Use the contract.js functions to get all contracts
+        const allContracts = await getAllContracts();
+        setContracts(allContracts);
+        
+        // Fetch user data from MongoDB
+        await fetchUserData(wallet);
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to initialize contracts:", err);
+        setError("Failed to connect to blockchain");
+        setLoading(false);
+      }
+    };
+    
+    initContracts();
+  }, [wallet]);
   
   // Take a loan
   const takeLoan = async (amount) => {
@@ -339,7 +330,7 @@ export const EtherRiftProvider = ({ children }) => {
     }
   };
   
-  // Start a duel
+  // Start a duel with fixed wager amount
   const startDuel = async () => {
     if (!wallet) return;
     
@@ -350,17 +341,18 @@ export const EtherRiftProvider = ({ children }) => {
       const ws = new WebSocket(`ws://localhost:3001`);
       
       ws.onopen = () => {
-        // Send request to find a duel
+        // Send request to join duel queue with fixed 10 token wager
         ws.send(JSON.stringify({
-          type: 'find_duel',
-          walletAddress: wallet
+          type: 'join_duel_queue',
+          walletAddress: wallet,
+          wageredAmount: 10 // Fixed wager amount
         }));
       };
       
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         
-        if (data.type === 'duel_found') {
+        if (data.type === 'duel_match_found') {
           setActiveDuel(data.duel);
           setWaitingForDuel(false);
         }
@@ -436,8 +428,6 @@ export const EtherRiftProvider = ({ children }) => {
     }
   };
   
-  // Add this function to the EtherRiftProvider component
-  
   // Update user tokens
   const updateUserTokens = async (amount) => {
     if (!wallet) return;
@@ -475,7 +465,6 @@ export const EtherRiftProvider = ({ children }) => {
       currentDimension, enterDimension,
       orderBook, trade,
       leaderboard, guilds, dimensions,
-      completeTutorial, updateSettings,
       // Tutorial related
       tutorialOpen, setTutorialOpen, tutorialData, handleTutorialNext,
       // User tokens
@@ -494,7 +483,9 @@ export const EtherRiftProvider = ({ children }) => {
       startDuel,
       answerDuelQuestion,
       // Loan function
-      takeLoan
+      takeLoan,
+      // User data functions
+      fetchUserData
     }}>
       {children}
     </EtherRiftContext.Provider>

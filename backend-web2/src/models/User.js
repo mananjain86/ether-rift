@@ -8,14 +8,15 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     index: true
   },
-  username: {
-    type: String,
-    default: ''
-  },
+  // ensName: {
+  //   type: String,
+  //   default: ''
+  // },
   tokenBalance: {
     type: Number,
     default: 100 // Starting with 100 tokens
   },
+  topics:[String],
   achievements: [{
     id: String,
     name: String,

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useEtherRift } from '../context/EtherRiftContext';
 import { useNavigate } from 'react-router-dom';
 import TopicPopup from '../components/TopicPopup';
 
@@ -15,8 +14,47 @@ const cardVariants = {
   visible: i => ({ opacity: 1, y: 0, transition: { delay: i * 0.15, type: 'spring', stiffness: 60 } })
 };
 
+// Dummy dimensions data moved from EtherRiftContext
+const dimensions = [
+  {
+    name: 'Stable Dimension',
+    color: 'cyan',
+    desc: 'Low volatility, ideal for learning and safe trading.',
+    players: 42,
+    volatility: 'Low',
+    apr: '4.2%',
+    icon: '🟦',
+    lore: 'A calm, regulated universe where markets rarely swing. Perfect for new traders and those who value stability.',
+    features: ['No chaos events', 'Low transaction fees', 'Beginner-friendly'],
+    recentEvents: ['APR increased to 4.2%', 'New player joined: 0xA1B2', 'Liquidity pool expanded'],
+  },
+  {
+    name: 'Volatile Dimension',
+    color: 'green',
+    desc: 'Exploit cross-market opportunities and quick trades.',
+    players: 17,
+    volatility: 'Medium',
+    apr: '11.3%',
+    icon: '🟩',
+    lore: 'A universe of opportunity for the quick and clever. Arbitrage bots and sharp minds thrive here.',
+    features: ['Cross-dimension trading', 'Bot-friendly', 'Rapid price updates'],
+    recentEvents: ['Bot deployed: ArbMaster9000', 'APR stable at 11.3%', 'Cross-market spread detected'],
+  },
+  {
+    name: 'Arbitrage Dimension',
+    color: 'pink',
+    desc: 'High risk, high reward. For experienced traders.',
+    players: 31,
+    volatility: 'High',
+    apr: '18.7%',
+    icon: '🟥',
+    lore: 'A wild, unpredictable universe where fortunes are made and lost in minutes. Only the bold survive.',
+    features: ['Frequent chaos events', 'High leverage allowed', 'Flash loan duels'],
+    recentEvents: ['Chaos Event: Volatility Surge!', 'PlayerX won a duel', 'APR dropped from 20%'],
+  },
+];
+
 const DimensionHub = () => {
-  const { dimensions, enterDimension } = useEtherRift();
   const navigate = useNavigate();
   const [selected, setSelected] = useState(dimensions[0]);
   const [topicPopupOpen, setTopicPopupOpen] = useState(false);

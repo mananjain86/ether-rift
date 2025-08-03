@@ -6,28 +6,28 @@ const TopicPopup = ({ isOpen, onClose, dimension }) => {
   console.log(dimension);
   const topics = {
     'Stable Dimension': [
-      { id: 1, title: 'What is DeFi?' },
-      { id: 2, title: 'Understanding Liquidity Pools & AMMs' },
-      { id: 3, title: 'Introduction to Staking' },
-      { id: 4, title: 'DeFi Lending & Borrowing' },
-      { id: 5, title: 'The Role of Stablecoins' }
+      { scenarioId: 'stable-defi-intro', title: 'What is DeFi?' },
+      { scenarioId: 'stable-liquidity-pools', title: 'Understanding Liquidity Pools & AMMs' },
+      { scenarioId: 'stable-staking', title: 'Introduction to Staking' },
+      { scenarioId: 'stable-lending', title: 'DeFi Lending & Borrowing' },
+      { scenarioId: 'stable-stablecoins', title: 'The Role of Stablecoins' }
     ],
     'Volatile Dimension': [
-      { id: 1, title: 'Mastering Yield Farming' },
-      { id: 2, title: 'The Risk of Impermanent Loss' },
-      { id: 3, title: 'Understanding Leverage & Liquidation' },
-      { id: 4, title: 'Introduction to DeFi Derivatives' },
-      { id: 5, title: 'Participating in DAO Governance' }
+      { scenarioId: 'volatile-yield-farming', title: 'Mastering Yield Farming' },
+      { scenarioId: 'volatile-impermanent-loss', title: 'The Risk of Impermanent Loss' },
+      { scenarioId: 'volatile-leverage-liquidation', title: 'Understanding Leverage & Liquidation' },
+      { scenarioId: 'volatile-derivatives', title: 'Introduction to DeFi Derivatives' },
+      { scenarioId: 'volatile-dao-governance', title: 'Participating in DAO Governance' }
     ],
     'Arbitrage Dimension': [
-      { id: 1, title: 'Cross-Exchange Arbitrage' },
-      { id: 2, title: 'Triangular Arbitrage' },
-      { id: 3, title: 'Flash Loans & Flash Swaps' },
-      { id: 4, title: 'Cyclical (Network) Arbitrage' }
+      { scenarioId: 'arbitrage-cross-exchange', title: 'Cross-Exchange Arbitrage' },
+      { scenarioId: 'arbitrage-triangular', title: 'Triangular Arbitrage' },
+      { scenarioId: 'arbitrage-flash-loans', title: 'Flash Loans & Flash Swaps' },
+      { scenarioId: 'arbitrage-network-arbitrage', title: 'Cyclical (Network) Arbitrage' }
     ]
   };
 
-  const handleTopicClick = (id, title) => {
+  const handleTopicClick = (scenarioId) => {
     // Map full dimension name to dimension key expected by backend
     const dimensionMap = {
       'Stable Dimension': 'Stable',
@@ -37,7 +37,7 @@ const TopicPopup = ({ isOpen, onClose, dimension }) => {
     const dimensionKey = dimensionMap[dimension] || dimension;
 
     // Navigate to GameInterface with correct dimension key and topic id
-    navigate(`/game?dimension=${encodeURIComponent(dimensionKey)}&topic=${id}`);
+    navigate(`/game/${scenarioId}`);
   };
 
   return (
@@ -64,7 +64,7 @@ const TopicPopup = ({ isOpen, onClose, dimension }) => {
             </button>
             
             <div className="text-cyan-100 mb-6 font-mono">
-              {topics[dimension].map(item => <p key={item.id} onClick={() => handleTopicClick(item.id,item.title)}>{item.title}</p>)}
+              {topics[dimension].map(item => <p key={item.scenarioId} onClick={() => handleTopicClick(item.scenarioId)}>{item.title}</p>)}
             </div>
               
               <motion.button

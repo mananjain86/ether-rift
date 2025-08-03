@@ -1,16 +1,38 @@
-import React, { useState } from 'react';
+// Update the component to use data from MongoDB
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useEtherRift } from '../context/EtherRiftContext';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { fetchUserData, takeLoan } from '../store/slices/userSlice';
+import { fetchPvPHistory } from '../store/slices/pvpSlice';
+import { useNavigate } from 'react-router-dom';
 
 const ProfileDashboard = () => {
-  const { user, takeLoan, loading } = useEtherRift();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  
+  // Redux state
+  const { user, wallet, loading } = useAppSelector(state => state.user);
+  const { pvpHistory } = useAppSelector(state => state.pvp);
+  
   const [loanAmount, setLoanAmount] = useState(50);
   const [showLoanModal, setShowLoanModal] = useState(false);
   
+  useEffect(() => {
+    if (wallet) {
+      dispatch(fetchUserData(wallet));
+      dispatch(fetchPvPHistory(wallet));
+    }
+  }, [wallet, dispatch]);
+  
   const handleLoanSubmit = async (e) => {
     e.preventDefault();
-    await takeLoan(loanAmount);
+    await dispatch(takeLoan({ walletAddress: wallet, amount: loanAmount }));
     setShowLoanModal(false);
+  };
+  
+  const handleTopicClick = (topicId) => {
+    // Navigate to GameInterface with the topic
+    navigate(`/game/${topicId}`);
   };
   
   return (
@@ -22,18 +44,20 @@ const ProfileDashboard = () => {
       <div className="flex-1 flex flex-col gap-6">
         <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="bg-black/60 backdrop-blur-lg glassmorph rounded-2xl p-6 shadow-2xl border-2 border-cyan-400/20 animate-border-glow">
           <h2 className="text-xl font-bold text-cyan-300 mb-4 font-orbitron">Player Stats</h2>
-          <ul className="text-cyan-200 text-sm mb-4 font-mono">
-            <li>Level: <span className="text-cyan-400 font-mono">{user.stats.level}</span></li>
-            <li>XP: <span className="text-cyan-400 font-mono">{user.stats.xp} / 2,000</span></li>
-            <li>Win/Loss: <span className="text-cyan-400 font-mono">{user.stats.winLoss[0]} / {user.stats.winLoss[1]}</span></li>
-            <li>Total Volume: <span className="text-cyan-400 font-mono">Ξ {user.stats.totalVolume}</span></li>
-            <li>Dimensions Explored: <span className="text-cyan-400 font-mono">{user.stats.dimensionsExplored}</span></li>
-            <li className="mt-2 pt-2 border-t border-gray-700">Token Balance: <span className="text-pink-400 font-mono">{user.tokenBalance}</span></li>
-          </ul>
-          <div className="w-full bg-gray-800 rounded h-3 mb-2">
-            <div className="bg-cyan-400 h-3 rounded" style={{ width: `${Math.min(100, (user.stats.xp / 2000) * 100)}%` }} />
+          
+          {/* Wallet Address */}
+          <div className="mb-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+            <div className="text-sm text-gray-400 mb-1">Wallet Address</div>
+            <div className="text-cyan-200 font-mono text-sm break-all">
+              {user.address || wallet || 'Not connected'}
+            </div>
           </div>
-          <span className="text-xs text-gray-400 font-mono">Progress to next level</span>
+          
+          <ul className="text-cyan-200 text-sm mb-4 font-mono">
+            <li>Win/Loss: <span className="text-cyan-400 font-mono">{user.winLoss[0]} / {user.winLoss[1]}</span></li>
+            <li>Total Volume: <span className="text-cyan-400 font-mono">Ξ {user.totalVolume}</span></li>
+            <li className="mt-2 pt-2 border-t border-gray-700">Token Balance: <span className="text-pink-400 font-mono">{user.tokenBalance || 0}</span></li>
+          </ul>
           
           {user.tokenBalance < 10 && (
             <div className="mt-4 p-3 bg-yellow-900/30 border border-yellow-600/30 rounded-lg">
@@ -48,52 +72,47 @@ const ProfileDashboard = () => {
           )}
         </motion.div>
         
-        {/* Loans Section */}
-        {user.loans && user.loans.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }} className="bg-black/60 backdrop-blur-lg glassmorph rounded-2xl p-6 shadow-2xl border-2 border-red-400/20 animate-border-glow">
-            <h2 className="text-xl font-bold text-red-300 mb-4 font-orbitron">Active Loans</h2>
-            <ul className="divide-y divide-gray-700">
-              {user.loans.map((loan, idx) => (
-                <li key={idx} className="py-3">
-                  <div className="flex justify-between">
-                    <span className="text-cyan-200">Borrowed:</span>
-                    <span className="text-pink-400">{loan.amount} {loan.tokenBorrowed}</span>
+        {/* Achievements Section */}
+        {user.achievements && user.achievements.length > 0 ? (
+          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="bg-black/60 backdrop-blur-lg glassmorph rounded-2xl p-6 shadow-2xl border-2 border-green-400/20 animate-border-glow">
+            <h2 className="text-xl font-bold text-green-300 mb-4 font-orbitron">Achievements</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {user.achievements.map((achievement, idx) => (
+                <div key={idx} className="p-3 bg-green-900/30 border border-green-600/30 rounded-lg">
+                  <div className="text-green-400 font-semibold text-sm">{achievement.name}</div>
+                  <div className="text-xs text-green-300 mt-1">
+                    {new Date(achievement.unlockedAt).toLocaleDateString()}
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-cyan-200">Collateral:</span>
-                    <span className="text-yellow-400">{loan.collateralAmount} {loan.collateralToken}</span>
-                  </div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    {new Date(loan.timestamp).toLocaleString()}
-                  </div>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="bg-black/60 backdrop-blur-lg glassmorph rounded-2xl p-6 shadow-2xl border-2 border-green-400/20 animate-border-glow">
+            <h2 className="text-xl font-bold text-green-300 mb-4 font-orbitron">Achievements</h2>
+            <div className="p-4 bg-gray-800/30 border border-gray-600/30 rounded-lg text-center">
+              <div className="text-gray-400 text-sm">No achievements yet</div>
+              <div className="text-xs text-gray-500 mt-1">Complete tutorials to unlock achievements</div>
+            </div>
           </motion.div>
         )}
-        
-        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="bg-black/60 backdrop-blur-lg glassmorph rounded-2xl p-6 shadow-2xl border-2 border-green-400/20 animate-border-glow">
-          <h2 className="text-xl font-bold text-green-300 mb-4 font-orbitron">Badges</h2>
-          <div className="flex gap-4">
-            {user.badges.map((b, i) => (
-              <motion.div key={b.name} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.15 }} className="flex flex-col items-center">
-                <span className="text-3xl mb-1 select-none">{b.icon}</span>
-                <span className="text-xs text-cyan-200 text-center font-orbitron">{b.name}</span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
       </div>
       
       {/* Trading History */}
-      <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="bg-black/60 backdrop-blur-lg glassmorph rounded-2xl p-6 shadow-2xl w-full md:w-96 border-2 border-pink-400/20 animate-border-glow">
-        <h2 className="text-xl font-bold text-pink-300 mb-4 font-orbitron">Trading History</h2>
+      <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="bg-black/60 backdrop-blur-lg glassmorph rounded-2xl p-6 shadow-2xl w-full md:w-96 border-2 border-pink-400/20 animate-border-glow">
+        <h2 className="text-xl font-bold text-pink-300 mb-4 font-orbitron">Recent Activity</h2>
         <ul className="text-cyan-200 text-sm divide-y divide-gray-700 font-mono">
-          {user.history.map((h, idx) => (
-            <motion.li key={idx} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.12 }} className="py-3">
-              <span className="text-cyan-400 font-mono">[{h.time}]</span> {h.action}
-            </motion.li>
-          ))}
+          {user.history && user.history.length > 0 ? (
+            user.history.map((h, idx) => (
+              <motion.li key={idx} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.12 }} className="py-3">
+                <span className="text-cyan-400 font-mono">[{h.time}]</span> {h.action}
+              </motion.li>
+            ))
+          ) : (
+            <li className="py-3 text-gray-400">
+              No recent activity. Start trading to see your history here!
+            </li>
+          )}
         </ul>
       </motion.div>
       

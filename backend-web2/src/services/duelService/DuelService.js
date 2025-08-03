@@ -59,6 +59,45 @@ class DuelService {
     // Notify both players
     this.notifyMatchStart(match);
   }
+  
+  // Handle client disconnection
+  handleDisconnect(clientId) {
+    // Remove from waiting queue if present
+    const queueIndex = this.waitingPlayers.findIndex(p => p.clientId === clientId);
+    if (queueIndex >= 0) {
+      this.waitingPlayers.splice(queueIndex, 1);
+      return;
+    }
+    
+    // Check if player is in an active match
+    for (const [matchId, match] of this.activeMatches.entries()) {
+      if (match.player1.clientId === clientId || match.player2.clientId === clientId) {
+        // Determine winner by forfeit
+        const winner = match.player1.clientId === clientId ? 'player2' : 'player1';
+        const loser = winner === 'player1' ? 'player2' : 'player1';
+        
+        // Update match status
+        match.status = 'completed';
+        match.winner = winner;
+        
+        // Notify remaining player about forfeit
+        const remainingClientId = match[winner].clientId;
+        const client = [...this.wss.clients].find(c => c.id === remainingClientId);
+        
+        if (client) {
+          client.send(JSON.stringify({
+            type: 'duel_completed',
+            result: 'win_by_forfeit',
+            matchId
+          }));
+        }
+        
+        // Remove match from active matches
+        this.activeMatches.delete(matchId);
+        break;
+      }
+    }
+  }
 }
 
 export default DuelService

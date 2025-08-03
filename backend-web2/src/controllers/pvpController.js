@@ -4,6 +4,8 @@ import User from '../models/User.js';
 // Record a PvP match
 export const recordPvPMatch = async (req, res) => {
   try {
+    console.log('recordPvPMatch called with body:', req.body);
+    
     const {
       player1Address,
       player2Address,
@@ -28,6 +30,15 @@ export const recordPvPMatch = async (req, res) => {
     const totalWagered = player1Wagered + player2Wagered;
     const tokensRewarded = winner === 'draw' ? 0 : totalWagered;
     
+    console.log('PvP match details:', {
+      player1Address,
+      player2Address,
+      player1Score,
+      player2Score,
+      winner,
+      tokensRewarded
+    });
+    
     // Create PvP record
     const pvpRecord = new PvPRecord({
       player1: {
@@ -47,6 +58,7 @@ export const recordPvPMatch = async (req, res) => {
     });
     
     await pvpRecord.save();
+    console.log('PvP record saved with ID:', pvpRecord._id);
     
     // Update user balances
     if (winner !== 'draw') {
@@ -58,11 +70,17 @@ export const recordPvPMatch = async (req, res) => {
         { $inc: { tokenBalance: tokensRewarded }, lastActive: Date.now() }
       );
       
+      console.log('Updated winner balance:', {
+        winnerAddress,
+        tokensRewarded
+      });
+      
       // No need to update loser's balance as it was already deducted when wagering
     }
     
     res.status(201).json(pvpRecord);
   } catch (error) {
+    console.error('Error in recordPvPMatch:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -70,6 +88,8 @@ export const recordPvPMatch = async (req, res) => {
 // Get PvP history for a user
 export const getUserPvPHistory = async (req, res) => {
   try {
+    console.log('getUserPvPHistory called for wallet:', req.params.walletAddress);
+    
     const { walletAddress } = req.params;
     const lowerCaseAddress = walletAddress.toLowerCase();
     
@@ -80,8 +100,14 @@ export const getUserPvPHistory = async (req, res) => {
       ]
     }).sort({ timestamp: -1 });
     
+    console.log('PvP history found:', {
+      walletAddress: lowerCaseAddress,
+      recordCount: pvpRecords.length
+    });
+    
     res.json(pvpRecords);
   } catch (error) {
+    console.error('Error in getUserPvPHistory:', error);
     res.status(500).json({ message: error.message });
   }
 };

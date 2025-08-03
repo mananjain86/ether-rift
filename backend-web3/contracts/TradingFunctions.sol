@@ -23,6 +23,10 @@ contract TradingFunctions {
     event Swap(address indexed user, address fromToken, address toToken, uint256 fromAmount, uint256 toAmount);
     event Repay(address indexed user, address token, uint256 amount);
     event FlashLoan(address indexed user, address token, uint256 amount, uint256 fee);
+    event ProvideLiquidity(address indexed user, address tokenA, address tokenB, uint256 amountA, uint256 amountB);
+    event RemoveLiquidity(address indexed user, address tokenA, address tokenB, uint256 amountA, uint256 amountB);
+    event YieldFarm(address indexed user, address token, uint256 amount);
+    event Vote(address indexed user, uint256 proposalId, bool support);
     
     // ============ Modifiers ============
     modifier onlyCore() {
@@ -273,6 +277,94 @@ contract TradingFunctions {
         coreContract.updateUserBalance(msg.sender, _token, totalRepay, false);
         
         emit FlashLoan(msg.sender, _token, _amount, fee);
+    }
+    
+    /**
+     * @notice Provide liquidity to a pool
+     * @param _tokenA First token in the pool
+     * @param _tokenB Second token in the pool
+     * @param _amountA Amount of token A
+     * @param _amountB Amount of token B
+     */
+    function provideLiquidity(
+        address _tokenA, 
+        address _tokenB, 
+        uint256 _amountA, 
+        uint256 _amountB
+    ) external validToken(_tokenA) validToken(_tokenB) {
+        require(_amountA > 0 && _amountB > 0, "Amounts must be greater than 0");
+        require(_tokenA != _tokenB, "Tokens must be different");
+        
+        // Check if user has enough tokens
+        require(coreContract.getUserBalance(msg.sender, _tokenA) >= _amountA, "Insufficient token A");
+        require(coreContract.getUserBalance(msg.sender, _tokenB) >= _amountB, "Insufficient token B");
+        
+        // Update balances
+        coreContract.updateUserBalance(msg.sender, _tokenA, _amountA, false); // Decrease token A
+        coreContract.updateUserBalance(msg.sender, _tokenB, _amountB, false); // Decrease token B
+        
+        // In a real implementation, this would mint LP tokens
+        // For simulation, we track it as staked tokens
+        
+        emit ProvideLiquidity(msg.sender, _tokenA, _tokenB, _amountA, _amountB);
+    }
+    
+    /**
+     * @notice Remove liquidity from a pool
+     * @param _tokenA First token in the pool
+     * @param _tokenB Second token in the pool
+     * @param _lpAmount Amount of LP tokens to burn
+     */
+    function removeLiquidity(
+        address _tokenA, 
+        address _tokenB, 
+        uint256 _lpAmount
+    ) external validToken(_tokenA) validToken(_tokenB) {
+        require(_lpAmount > 0, "LP amount must be greater than 0");
+        
+        // Calculate amounts to return (simplified)
+        uint256 amountA = _lpAmount / 2;
+        uint256 amountB = _lpAmount / 2;
+        
+        // Update balances
+        coreContract.updateUserBalance(msg.sender, _tokenA, amountA, true); // Increase token A
+        coreContract.updateUserBalance(msg.sender, _tokenB, amountB, true); // Increase token B
+        
+        emit RemoveLiquidity(msg.sender, _tokenA, _tokenB, amountA, amountB);
+    }
+    
+    /**
+     * @notice Start yield farming with tokens
+     * @param _token The token to farm
+     * @param _amount The amount to farm
+     */
+    function yieldFarm(address _token, uint256 _amount) external validToken(_token) {
+        require(_amount > 0, "Amount must be greater than 0");
+        
+        // Check if user has enough tokens
+        require(coreContract.getUserBalance(msg.sender, _token) >= _amount, "Insufficient tokens");
+        
+        // Update balances
+        coreContract.updateUserBalance(msg.sender, _token, _amount, false); // Decrease available balance
+        coreContract.updateUserStaked(msg.sender, _token, _amount, true);   // Increase staked amount
+        
+        emit YieldFarm(msg.sender, _token, _amount);
+    }
+    
+    /**
+     * @notice Vote on a proposal
+     * @param _proposalId The proposal ID
+     * @param _support Whether to support the proposal
+     */
+    function vote(uint256 _proposalId, bool _support) external {
+        // Check if user has achievement tokens to vote
+        uint256 achievementBalance = coreContract.achievementToken().balanceOf(msg.sender);
+        require(achievementBalance > 0, "No achievement tokens to vote with");
+        
+        // In a real implementation, this would check proposal status and voting power
+        // For simulation, we just emit the event
+        
+        emit Vote(msg.sender, _proposalId, _support);
     }
     
     // ============ Internal Functions ============

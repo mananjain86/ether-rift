@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useEtherRift } from '../context/EtherRiftContext';
 
 const DuelArena = () => {
   const { user, wallet, startDuel, waitingForDuel, activeDuel, answerDuelQuestion } = useEtherRift();
@@ -88,7 +87,8 @@ const DuelArena = () => {
       return;
     }
     
-    startDuel();
+    // Start duel with fixed 10 token wager
+    startDuel(10);
   };
 
   return (
@@ -98,10 +98,16 @@ const DuelArena = () => {
       
       {!wallet ? (
         <div className="flex-1 flex items-center justify-center">
-          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="bg-black/60 backdrop-blur-lg glassmorph rounded-2xl p-6 shadow-2xl border-2 border-cyan-400/20 animate-border-glow text-center">
-            <h2 className="text-xl font-bold text-cyan-300 mb-4 font-orbitron">Connect Wallet</h2>
-            <p className="text-cyan-200 mb-4">Please connect your wallet to start a duel.</p>
-          </motion.div>
+          <div className="text-center p-8 bg-black/60 backdrop-blur-lg rounded-2xl border-2 border-cyan-400/20 max-w-md">
+            <h2 className="text-2xl font-bold text-cyan-300 mb-4">Connect Your Wallet</h2>
+            <p className="text-cyan-100 mb-6">You need to connect your wallet to access the Duel Arena.</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-gradient-to-r from-cyan-600 to-cyan-400 text-white font-bold py-3 px-6 rounded-lg hover:from-cyan-500 hover:to-cyan-300 transition duration-300"
+            >
+              Refresh Page
+            </button>
+          </div>
         </div>
       ) : waitingForDuel ? (
         <div className="flex-1 flex items-center justify-center">
@@ -194,50 +200,24 @@ const DuelArena = () => {
           </motion.div>
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center">
-          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="bg-black/60 backdrop-blur-lg glassmorph rounded-2xl p-6 shadow-2xl border-2 border-cyan-400/20 animate-border-glow text-center">
-            <h2 className="text-xl font-bold text-cyan-300 mb-4 font-orbitron">DeFi Duel Arena</h2>
-            <p className="text-cyan-200 mb-6">Test your DeFi knowledge against other players!</p>
-            
-            <div className="mb-6">
-              <p className="text-cyan-200 mb-2">Your Token Balance: <span className="text-pink-400">{user.tokenBalance}</span></p>
-              <p className="text-gray-400 text-sm">Each duel costs 10 tokens to enter</p>
-            </div>
-            
-            <button
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="text-center p-8 bg-black/60 backdrop-blur-lg rounded-2xl border-2 border-cyan-400/20 max-w-md">
+            <h2 className="text-2xl font-bold text-cyan-300 mb-4">Ready to Duel?</h2>
+            <p className="text-cyan-100 mb-2">Test your DeFi knowledge against other players!</p>
+            <p className="text-pink-400 mb-6">Wager: 10 tokens</p>
+            <button 
               onClick={handleStartDuel}
               disabled={user.tokenBalance < 10}
-              className={`px-6 py-3 rounded border transition-colors ${user.tokenBalance >= 10 ? 'bg-cyan-900/50 hover:bg-cyan-800/50 text-cyan-200 border-cyan-400' : 'bg-gray-800/50 text-gray-400 border-gray-600 cursor-not-allowed'}`}
+              className={`w-full bg-gradient-to-r from-pink-600 to-pink-400 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ${user.tokenBalance < 10 ? 'opacity-50 cursor-not-allowed' : 'hover:from-pink-500 hover:to-pink-300'}`}
             >
-              Start Duel (10 Tokens)
+              Start Duel
             </button>
-            
             {user.tokenBalance < 10 && (
-              <div className="mt-4">
-                <p className="text-yellow-400 text-sm">Not enough tokens!</p>
-                <Link to="/profile" className="text-cyan-400 hover:text-cyan-300 text-sm underline mt-2 inline-block">
-                  Take a loan
-                </Link>
-              </div>
+              <p className="text-red-400 mt-2">Not enough tokens. You need 10 tokens to duel.</p>
             )}
-          </motion.div>
+          </div>
         </div>
       )}
-      
-      {/* Custom CSS for effects */}
-      <style>{`
-        .glassmorph {
-          background: rgba(16, 24, 32, 0.7);
-          backdrop-filter: blur(8px);
-        }
-        .animate-border-glow {
-          animation: borderGlow 2.5s linear infinite alternate;
-        }
-        @keyframes borderGlow {
-          0% { box-shadow: 0 0 16px #0ff8, 0 0 0 #000; border-color: #22d3ee; }
-          100% { box-shadow: 0 0 32px #ec489988, 0 0 0 #000; border-color: #ec4899; }
-        }
-      `}</style>
     </div>
   );
 };
