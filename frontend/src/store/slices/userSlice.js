@@ -5,9 +5,16 @@ const API_URL = "http://localhost:3001/api";
 // Initial state with dummy data
 const initialState = {
   wallet: '',
+  isRegistered: false,
   user: {
     address: '',
     tokenBalance: 100,
+    tokenBalances: {
+      vETH: 100,
+      vUSDC: 0,
+      vDAI: 0,
+      ERA: 0
+    },
     loans: [],
     achievements: [],
     topics: [],
@@ -88,6 +95,19 @@ const userSlice = createSlice({
     setWallet: (state, action) => {
       state.wallet = action.payload;
     },
+    setRegistered: (state, action) => {
+      state.isRegistered = action.payload;
+    },
+    updateTokenBalances: (state, action) => {
+      state.user.tokenBalances = {
+        ...state.user.tokenBalances,
+        ...action.payload
+      };
+    },
+    updateSingleTokenBalance: (state, action) => {
+      const { token, amount } = action.payload;
+      state.user.tokenBalances[token] = amount;
+    },
     addTrade: (state, action) => {
       const { type, amount, price } = action.payload;
       state.user.trades.unshift({
@@ -153,6 +173,9 @@ const userSlice = createSlice({
 
 export const {
   setWallet,
+  setRegistered,
+  updateTokenBalances,
+  updateSingleTokenBalance,
   addTrade,
   completeTutorial,
   unlockAchievement,

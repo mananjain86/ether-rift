@@ -2,8 +2,7 @@
  * Base Market Simulator class with core functionality
  */
 class BaseSimulator {
-  constructor(wss) {
-    this.wss = wss; // WebSocket server instance
+  constructor() {
     this.activeScenarios = new Map(); // Map of active scenarios by client ID
     this.clientTopics = new Map(); // Map of active topics by client ID
     this.intervalIds = new Map(); // Map of interval IDs by client ID
@@ -106,19 +105,8 @@ class BaseSimulator {
       payload = this.scenarioHandlers[topicId](scenarioState);
     }
     
-    // Find the client's WebSocket connection
-    this.wss.clients.forEach(client => {
-      if (client.id === clientId) {
-        const message = {
-          type: 'scenario_update',
-          topicId,
-          payload,
-          timestamp: Date.now()
-        };
-        
-        client.send(JSON.stringify(message));
-      }
-    });
+    // For quiz functionality, we don't need real-time updates
+    console.log(`Scenario update for client ${clientId}:`, payload);
   }
 
   /**
@@ -127,16 +115,8 @@ class BaseSimulator {
    * @param {Object} payload - The payload to send
    */
   broadcastToAll(topicId, payload) {
-    this.wss.clients.forEach(client => {
-      const message = {
-        type: 'topic_broadcast',
-        topicId,
-        payload,
-        timestamp: Date.now()
-      };
-      
-      client.send(JSON.stringify(message));
-    });
+    // For quiz functionality, we don't need real-time broadcasts
+    console.log(`Broadcast to topic ${topicId}:`, payload);
   }
 
   /**

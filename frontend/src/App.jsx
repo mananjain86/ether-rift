@@ -7,9 +7,8 @@ import LandingPage from './pages/LandingPage';
 import DimensionHub from './pages/DimensionHub';
 import GameInterface from './pages/GameInterface';
 import ProfileDashboard from './pages/ProfileDashboard';
-import Leaderboard from './pages/Leaderboard';
 import TutorialCenter from './pages/TutorialCenter';
-import DuelArena from './pages/DuelArena';
+import Quiz from './pages/Quiz';
 
 function App() {
   return (
@@ -19,9 +18,8 @@ function App() {
           <Route path="/dimensions" element={<Layout><DimensionHub /></Layout>} />
           <Route path="/game/:scenarioId" element={<Layout><GameInterface /></Layout>} />
           <Route path="/profile" element={<Layout><ProfileDashboard /></Layout>} />
-          <Route path="/leaderboard" element={<Layout><Leaderboard /></Layout>} />
           <Route path="/tutorial" element={<Layout><TutorialCenter /></Layout>} />
-          <Route path="/duel/:id" element={<Layout><DuelArena /></Layout>} />
+          <Route path="/quiz" element={<Layout><Quiz /></Layout>} />
         </Routes>
     </Provider>
   );

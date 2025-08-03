@@ -2,7 +2,6 @@ import express from 'express';
 import { topicData } from '../data/topicData.js';
 // Add this line to the imports
 import { getUserByWallet, registerUser, updateTokenBalance, recordLoan, getOnlineUsers, updateUserTopics } from '../controllers/userController.js';
-import { recordPvPMatch, getUserPvPHistory } from '../controllers/pvpController.js';
 
 const router = express.Router();
  
@@ -21,9 +20,7 @@ router.post('/users/:walletAddress/loans', recordLoan);
 router.put('/users/:walletAddress/topics', updateUserTopics);
 router.get('/users/online', getOnlineUsers);
 
-// PvP routes
-router.post('/pvp', recordPvPMatch);
-router.get('/pvp/users/:walletAddress', getUserPvPHistory);
+
 
 // Get topic data by dimension and topic ID
 router.get('/topics/:dimension/:topicId', (req, res) => {

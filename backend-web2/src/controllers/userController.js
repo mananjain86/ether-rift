@@ -41,11 +41,17 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'User already registered' });
     }
     
-    // Create new user with 100 initial tokens
+    // Create new user with initial token balances
     user = new User({
       walletAddress: walletAddress.toLowerCase(),
       ensName: ensName || '',
-      tokenBalance: 100 // Starting balance
+      tokenBalance: 100, // 100 vETH starting balance
+      tokenBalances: {
+        vETH: 100,
+        vUSDC: 0,
+        vDAI: 0,
+        ERA: 0
+      }
     });
     
     await user.save();

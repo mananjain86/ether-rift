@@ -8,9 +8,9 @@ const TRADING_ABI = tradingAbi.abi;
 const ACHIEVEMENT_ABI = achievementAbi.abi;
 
 // Contract addresses - replace with your deployed contract addresses
-const CORE_ADDRESS = '0x4aCEC9EED63C4A2C5Bc31f1174FAef2ea3af7DA5';
-const TRADING_ADDRESS = '0x98b1b9Dcb2F5ee6f505a92F52B7f7e00ba6Aa375';
-const ACHIEVEMENT_ADDRESS = '0x3700fE43D3988AeEb2025605c1A9745f77014a6a';
+const CORE_ADDRESS = '0x06db914d18dDf5C4e40aB808026bc5f5e768F9d6';
+const TRADING_ADDRESS = '0x7E90Fd44304177DBa8cc22373A9298766E8e2448';
+const ACHIEVEMENT_ADDRESS = '0xfE64EC7eaaeE7C8b9F7D00a14E67085c4153f55b';
 
 // Dynamic contract initialization function for EtherRiftCore
 export const getCoreContract = async () => {

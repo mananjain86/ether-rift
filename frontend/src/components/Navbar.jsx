@@ -8,7 +8,6 @@ const navLinks = [
   { name: 'HOME', path: '/' },
   { name: 'DIMENSIONS', path: '/dimensions' },
   { name: 'PROFILE', path: '/profile' },
-  { name: 'LEADERBOARD', path: '/leaderboard' },
   { name: 'TUTORIAL', path: '/tutorial' },
 ];
 
@@ -20,8 +19,6 @@ const Navbar = () => {
   const { wallet, user } = useAppSelector(state => state.user);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [duelLoading, setDuelLoading] = useState(false);
-  const [wsRef, setWsRef] = useState(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('walletAddress');
@@ -48,39 +45,7 @@ const Navbar = () => {
     }
   }, [dispatch]);
 
-  // Connect to WebSocket for duels
-  useEffect(() => {
-    if (isConnected && !wsRef) {
-      const ws = new WebSocket('ws://localhost:3001');
-      setWsRef(ws);
-      
-      ws.addEventListener('open', (event) => {
-        console.log('Connected to WebSocket server for duels');
-      });
-      
-      ws.addEventListener('message', (event) => {
-        const data = JSON.parse(event.data);
-        console.log('Message from server:', data);
-        
-        if (data.type === 'duel_match_found') {
-          setDuelLoading(false);
-          // Navigate to duel page or show match found modal
-          alert(`Match found! Opponent: ${data.opponent}`);
-        }
-      });
-      
-      ws.addEventListener('close', (event) => {
-        console.log('Disconnected from WebSocket server');
-        setWsRef(null);
-      });
-    }
-    
-    return () => {
-      if (wsRef) {
-        wsRef.close();
-      }
-    };
-  }, [isConnected]);
+
 
   // Connect wallet function
   const connectWallet = async () => {
@@ -133,31 +98,7 @@ const Navbar = () => {
     localStorage.removeItem('walletAddress');
   };
 
-  const startDuel = () => {
-    if (!isConnected) {
-      alert('Please connect your wallet first!');
-      return;
-    }
-    
-    if (!user || user.tokenBalance < 10) {
-      alert('You need at least 10 tokens to start a duel!');
-      return;
-    }
-    
-    setDuelLoading(true);
-    
-    // Send join queue message with fixed 10 token wager
-    if (wsRef && wsRef.readyState === WebSocket.OPEN) {
-      wsRef.send(JSON.stringify({
-        type: 'join_duel_queue',
-        walletAddress: wallet,
-        wageredAmount: 10
-      }));
-    } else {
-      alert('Connection not available. Please try again.');
-      setDuelLoading(false);
-    }
-  };
+
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -181,19 +122,14 @@ const Navbar = () => {
           </Link>
         ))}
         
-        {/* Start Duel Button */}
+        {/* Start Quiz Button */}
         {isConnected && (
-          <button
-            onClick={startDuel}
-            disabled={duelLoading}
-            className={`px-4 py-2 font-orbitron uppercase text-sm transition duration-300 ${
-              duelLoading 
-                ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
-                : 'bg-gradient-to-r from-pink-600 to-pink-400 text-white hover:from-pink-500 hover:to-pink-300'
-            } rounded-lg border border-pink-400/50`}
+          <Link
+            to="/quiz"
+            className="px-4 py-2 font-orbitron uppercase text-sm transition duration-300 bg-gradient-to-r from-cyan-600 to-cyan-400 text-white hover:from-cyan-500 hover:to-cyan-300 rounded-lg border border-cyan-400/50"
           >
-            {duelLoading ? 'Finding Match...' : 'Start Duel'}
-          </button>
+            Take Quiz
+          </Link>
         )}
         
         {isConnected ? (

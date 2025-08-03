@@ -5,8 +5,8 @@ import ScenarioHandlers from './ScenarioHandlers.js';
  * Main Market Simulator class that extends BaseSimulator
  */
 class MarketSimulator extends BaseSimulator {
-  constructor(wss) {
-    super(wss);
+  constructor() {
+    super();
     
     // Initialize scenario handlers
     this.scenarioHandlers = {

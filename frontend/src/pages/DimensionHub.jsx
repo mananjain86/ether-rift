@@ -76,7 +76,17 @@ const DimensionHub = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-extrabold text-cyan-300 mb-4 font-orbitron drop-shadow-[0_0_8px_#22d3ee] animate-glow">Choose Your Dimension</h1>
-          <p className="text-cyan-200 text-xl max-w-3xl mx-auto font-mono">Each dimension offers unique market conditions and trading challenges. Select one to begin your journey!</p>
+          <p className="text-cyan-200 text-xl max-w-3xl mx-auto font-mono mb-6">Each dimension offers unique market conditions and trading challenges. Select one to begin your journey!</p>
+          
+          {/* Quiz Button */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => navigate('/quiz')}
+            className="px-8 py-4 bg-gradient-to-r from-pink-600 to-pink-400 text-white font-bold rounded-lg transition duration-300 hover:from-pink-500 hover:to-pink-300 border-2 border-pink-400/50 font-orbitron text-lg"
+          >
+            🧠 Take DeFi Knowledge Quiz
+          </motion.button>
         </div>
 
         {/* Content Grid */}

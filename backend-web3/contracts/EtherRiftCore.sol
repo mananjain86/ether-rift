@@ -85,7 +85,7 @@ contract EtherRiftCore is Ownable, Pausable {
     
     // ============ Core Functions ============
     /**
-     * @notice Registers a new player
+     * @notice Registers a new player and initializes their balances
      */
     function register() external {
         require(!players[msg.sender].isRegistered, "Already registered");
@@ -93,6 +93,16 @@ contract EtherRiftCore is Ownable, Pausable {
         players[msg.sender].isRegistered = true;
         players[msg.sender].tradesCompleted = 0;
         players[msg.sender].totalVolume = 0;
+        
+        // Initialize user balances
+        address vETH = address(1);
+        address vUSDC = address(2);
+        address vDAI = address(3);
+        
+        // Set initial balances: 100 vETH, 0 vUSDC, 0 vDAI
+        userAssetBalances[msg.sender][vETH] = 100 * 10**18; // 100 vETH
+        userAssetBalances[msg.sender][vUSDC] = 0; // 0 vUSDC
+        userAssetBalances[msg.sender][vDAI] = 0; // 0 vDAI
         
         emit PlayerRegistered(msg.sender);
     }

@@ -14,7 +14,13 @@ const userSchema = new mongoose.Schema({
   // },
   tokenBalance: {
     type: Number,
-    default: 100 // Starting with 100 tokens
+    default: 100 // Starting with 100 vETH tokens
+  },
+  tokenBalances: {
+    vETH: { type: Number, default: 100 },
+    vUSDC: { type: Number, default: 0 },
+    vDAI: { type: Number, default: 0 },
+    ERA: { type: Number, default: 0 }
   },
   topics:[String],
   achievements: [{
