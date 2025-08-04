@@ -63,8 +63,31 @@ const TopicPopup = ({ isOpen, onClose, dimension }) => {
               ✕
             </button>
             
-            <div className="text-cyan-100 mb-6 font-mono">
-              {topics[dimension].map(item => <p key={item.scenarioId} onClick={() => handleTopicClick(item.scenarioId)}>{item.title}</p>)}
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold text-cyan-300 mb-4 font-orbitron">{dimension}</h3>
+              <div className="grid grid-cols-1 gap-3">
+                {topics[dimension].map((item, index) => (
+                  <motion.button
+                    key={item.scenarioId}
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full p-4 text-left bg-gradient-to-r from-gray-800/80 to-gray-700/80 hover:from-cyan-900/60 hover:to-blue-900/60 border border-gray-600 hover:border-cyan-400 rounded-lg transition-all duration-200 group"
+                    onClick={() => handleTopicClick(item.scenarioId)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-cyan-400 text-sm font-mono">Topic {index + 1}</span>
+                        <h4 className="text-white font-semibold group-hover:text-cyan-200 transition-colors">
+                          {item.title}
+                        </h4>
+                      </div>
+                      <div className="text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                        →
+                      </div>
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
             </div>
               
               <motion.button

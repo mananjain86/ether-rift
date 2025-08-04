@@ -1,7 +1,7 @@
 import express from 'express';
 import { topicData } from '../data/topicData.js';
 // Add this line to the imports
-import { getUserByWallet, registerUser, updateTokenBalance, recordLoan, getOnlineUsers, updateUserTopics } from '../controllers/userController.js';
+import { getUserByWallet, registerUser, updateTokenBalance, recordLoan, getOnlineUsers, updateUserTopics, updateUserData } from '../controllers/userController.js';
 
 const router = express.Router();
  
@@ -18,6 +18,7 @@ router.put('/users/:walletAddress/balance', updateTokenBalance);
 // router.put('/users/:walletAddress/ens', updateEnsName);
 router.post('/users/:walletAddress/loans', recordLoan);
 router.put('/users/:walletAddress/topics', updateUserTopics);
+router.put('/users/:walletAddress/update', updateUserData);
 router.get('/users/online', getOnlineUsers);
 
 

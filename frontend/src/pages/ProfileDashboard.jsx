@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchUserData, takeLoan } from '../store/slices/userSlice';
 import { useNavigate } from 'react-router-dom';
+import AchievementDisplay from '../components/AchievementDisplay';
 
 const ProfileDashboard = () => {
   const dispatch = useAppDispatch();
@@ -94,29 +95,9 @@ const ProfileDashboard = () => {
         </motion.div>
         
         {/* Achievements Section */}
-        {user.achievements && user.achievements.length > 0 ? (
-          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="bg-black/60 backdrop-blur-lg glassmorph rounded-2xl p-6 shadow-2xl border-2 border-green-400/20 animate-border-glow">
-            <h2 className="text-xl font-bold text-green-300 mb-4 font-orbitron">Achievements</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {user.achievements.map((achievement, idx) => (
-                <div key={idx} className="p-3 bg-green-900/30 border border-green-600/30 rounded-lg">
-                  <div className="text-green-400 font-semibold text-sm">{achievement.name}</div>
-                  <div className="text-xs text-green-300 mt-1">
-                    {new Date(achievement.unlockedAt).toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="bg-black/60 backdrop-blur-lg glassmorph rounded-2xl p-6 shadow-2xl border-2 border-green-400/20 animate-border-glow">
-            <h2 className="text-xl font-bold text-green-300 mb-4 font-orbitron">Achievements</h2>
-            <div className="p-4 bg-gray-800/30 border border-gray-600/30 rounded-lg text-center">
-              <div className="text-gray-400 text-sm">No achievements yet</div>
-              <div className="text-xs text-gray-500 mt-1">Complete tutorials to unlock achievements</div>
-            </div>
-          </motion.div>
-        )}
+        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
+          <AchievementDisplay />
+        </motion.div>
       </div>
       
       {/* Quiz Results */}

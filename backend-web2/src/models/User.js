@@ -12,10 +12,6 @@ const userSchema = new mongoose.Schema({
   //   type: String,
   //   default: ''
   // },
-  tokenBalance: {
-    type: Number,
-    default: 100 // Starting with 100 vETH tokens
-  },
   tokenBalances: {
     vETH: { type: Number, default: 100 },
     vUSDC: { type: Number, default: 0 },
@@ -30,7 +26,8 @@ const userSchema = new mongoose.Schema({
   }],
   trades: {
     completed: { type: Number, default: 0 },
-    totalVolume: { type: Number, default: 0 }
+    totalVolume: { type: Number, default: 0 },
+    history: [{ type: Object, default: [] }]
   },
   loans: [{
     tokenBorrowed: String,
@@ -39,6 +36,10 @@ const userSchema = new mongoose.Schema({
     collateralAmount: Number,
     timestamp: { type: Date, default: Date.now }
   }],
+  winLoss: {
+    type: [Number],
+    default: [0, 0] // [wins, losses]
+  },
   createdAt: {
     type: Date,
     default: Date.now
